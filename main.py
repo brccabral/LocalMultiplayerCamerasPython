@@ -1,5 +1,7 @@
 import random
 import sys
+from types import TracebackType
+from typing import List
 import pygame
 
 
@@ -17,7 +19,7 @@ class Player:
         self.color = color
         self.speed = 60
 
-        self.pos = pygame.Vector2(random.randint(20, 620), 300)
+        self.pos = pygame.Vector2(random.randint(20, 620), 10)
         self.direction = pygame.Vector2(0, 0)
 
     def player_input(self, dt: float):
@@ -35,12 +37,11 @@ class Player:
     def move_down(self, dt: float):
         self.direction += pygame.Vector2(0, self.speed * dt)
 
-    def update(self, surface: pygame.surface.Surface, dt: float):
+    def update(self, dt: float):
         self.player_input(dt)
         if self.direction.magnitude() != 0:
             self.direction = self.direction.normalize()
         self.pos += self.direction
-        pygame.draw.rect(surface, self.color, (self.pos[0], self.pos[1], 30, 30))
         self.direction = pygame.Vector2(0, 0)
 
 
@@ -70,14 +71,72 @@ class Player2(Player):
             self.move_down(dt)
 
 
+class GameScene:
+    def __init__(self, players: List[Player]):
+        self.scene_surface = pygame.Surface((1280, 240))
+        self.players = players
+
+    def update(self, dt: float):
+        for player in self.players:
+            player.update(dt)
+
+
+class Scene1(GameScene):
+    def __init__(self, players: List[Player]):
+        super().__init__(players)
+
+        self.bg = pygame.Surface((1280, 240))
+
+        ar = pygame.PixelArray(self.bg)
+        for x in range(1280):
+            c = x / 1280 * 255
+            r, g, b = c, c, c
+            ar[x, :] = (r, g, b)
+
+    def update(self, dt: float):
+        super().update(dt)
+        self.scene_surface.blit(self.bg, (0, 0))
+        for player in self.players:
+            pygame.draw.rect(
+                self.scene_surface, player.color, (player.pos[0], player.pos[1], 30, 30)
+            )
+        GameWindow().window_surface.blit(self.scene_surface, (0, 0))
+        debug(player.pos)
+
+
 class GameWindow:
-    def __init__(self):
+    instance = None
+
+    def __new__(cls, *args, **kwds):
+        """Return an open Pygame window"""
+
+        if GameWindow.instance is not None:
+            return GameWindow.instance
+        self = object.__new__(cls)
         pygame.init()
         self.window_surface = pygame.display.set_mode((640, 480))
         self.clock = pygame.time.Clock()
-
         self.player1 = Player1("P1", "blue")
         self.player2 = Player2("P2", "orange")
+        self.set_scene()
+        GameWindow.instance = self
+        return self
+
+    def __enter__(self):
+        return self
+
+    def __exit__(
+        self, exc_type: type, exc_value: Exception, exc_traceback: TracebackType
+    ):
+        self.close()
+        return False
+
+    def close(self):
+        pygame.quit()
+        GameWindow.instance = None
+
+    def set_scene(self):
+        self.scene = Scene1([self.player1, self.player2])
 
     def run(self):
         dt = 0.0
@@ -89,13 +148,12 @@ class GameWindow:
                     pygame.quit()
                     sys.exit()
 
-            self.player1.update(self.window_surface, dt)
-            self.player2.update(self.window_surface, dt)
+            self.scene.update(dt)
 
-            pygame.display.flip()
+            pygame.display.update()
             dt = self.clock.tick(60) / 1000
 
 
 if __name__ == "__main__":
-    game = GameWindow()
-    game.run()
+    with GameWindow() as game:
+        game.run()

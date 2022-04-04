@@ -21,10 +21,12 @@ class Scene1(GameScene):
         self.bg = pygame.Surface(self.scene_surface.get_size())
 
         ar = pygame.PixelArray(self.bg)
+        maximum = self.bg.get_width() + self.bg.get_height()
         for x in range(self.bg.get_width()):
-            c = x / self.bg.get_width() * 255
-            r, g, b = c, c, c
-            ar[x, :] = (r, g, b)
+            for y in range(self.bg.get_height()):
+                c = (x + y) / maximum * 255
+                r, g, b = c, c, c
+                ar[x, y] = (r, g, b)
 
     def update(self, dt: float):
         super().update(dt)

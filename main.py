@@ -4,6 +4,12 @@ from types import TracebackType
 from typing import List, Tuple
 import pygame
 
+SCREEN_WIDTH = 640
+SCREEN_HEIGHT = 480
+
+GAME_SCENE_WIDTH = 1280
+GAME_SCENE_HEIGHT = 960
+
 
 def debug(message: str, surface: pygame.Surface):
     font = pygame.font.SysFont("Arial", 15)
@@ -27,7 +33,10 @@ class Player:
         self.speed = 60
 
         # position
-        self.pos = pygame.Vector2(random.randint(20, 620), random.randint(20, 100))
+        self.pos = pygame.Vector2(
+            random.randint(20, GAME_SCENE_WIDTH - 20),
+            random.randint(20, GAME_SCENE_HEIGHT - 20),
+        )
         self.direction = pygame.Vector2(0, 0)
 
         # control
@@ -69,7 +78,7 @@ class Player:
 
 class GameScene:
     def __init__(self, players: List[Player]):
-        self.scene_surface = pygame.Surface((1280, 240))
+        self.scene_surface = pygame.Surface((GAME_SCENE_WIDTH, GAME_SCENE_HEIGHT))
         self.players = players
 
     def update(self, dt: float):
@@ -81,16 +90,17 @@ class Scene1(GameScene):
     def __init__(self, players: List[Player]):
         super().__init__(players)
 
-        self.bg = pygame.Surface((1280, 240))
+        self.bg = pygame.Surface(self.scene_surface.get_size())
 
         ar = pygame.PixelArray(self.bg)
-        for x in range(1280):
-            c = x / 1280 * 255
+        for x in range(self.bg.get_width()):
+            c = x / self.bg.get_width() * 255
             r, g, b = c, c, c
             ar[x, :] = (r, g, b)
 
     def update(self, dt: float):
         super().update(dt)
+        self.scene_surface.fill("green")
         self.scene_surface.blit(self.bg, (0, 0))
         for player in self.players:
             pygame.draw.rect(
@@ -108,14 +118,14 @@ class GameWindow:
             return GameWindow.instance
         self = object.__new__(cls)
         pygame.init()
-        self.window_surface = pygame.display.set_mode((640, 480))
+        self.window_surface = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
         self.clock = pygame.time.Clock()
         self.player1 = Player()
         self.player2 = Player(
             "P2", "orange", pygame.K_j, pygame.K_l, pygame.K_i, pygame.K_k
         )
         self.camera1 = Camera(self.player1, (0, 0))
-        self.camera2 = Camera(self.player2, (0, 240))
+        self.camera2 = Camera(self.player2, (0, SCREEN_HEIGHT // 2))
         self.set_scene()
         GameWindow.instance = self
         return self
@@ -157,10 +167,10 @@ class GameWindow:
 class Camera:
     def __init__(self, player: Player, screen_pos: Tuple[int, int]):
         self.offset = pygame.Vector2()
-        self.center_pos = pygame.Vector2(640 // 2, 240 // 2)
+        self.center_pos = pygame.Vector2(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 // 2)
         self.player = player
         self.screen_pos = screen_pos
-        self.internal_surface = pygame.Surface((640 * 3, 240 * 3))
+        self.internal_surface = pygame.Surface((SCREEN_WIDTH * 3, SCREEN_HEIGHT * 3))
 
     def center_target_camera(self):
         self.offset = self.center_pos - self.player.pos

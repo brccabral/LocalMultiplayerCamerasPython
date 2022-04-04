@@ -1,5 +1,4 @@
 import sys
-from types import TracebackType
 import pygame
 from settings import SCREEN_WIDTH, SCREEN_HEIGHT
 from player import Player
@@ -14,14 +13,7 @@ def debug(message: str, surface: pygame.Surface):
 
 
 class GameWindow:
-    instance = None
-
-    def __new__(cls, *args, **kwds):
-        """Return an open Pygame window"""
-
-        if GameWindow.instance is not None:
-            return GameWindow.instance
-        self = object.__new__(cls)
+    def __init__(self):
         pygame.init()
         self.window_surface = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
         self.clock = pygame.time.Clock()
@@ -32,21 +24,6 @@ class GameWindow:
         self.camera1 = Camera(self.player1, (0, 0))
         self.camera2 = Camera(self.player2, (0, SCREEN_HEIGHT // 2))
         self.set_scene()
-        GameWindow.instance = self
-        return self
-
-    def __enter__(self):
-        return self
-
-    def __exit__(
-        self, exc_type: type, exc_value: Exception, exc_traceback: TracebackType
-    ):
-        self.close()
-        return False
-
-    def close(self):
-        pygame.quit()
-        GameWindow.instance = None
 
     def set_scene(self):
         self.scene = Scene1([self.player1, self.player2])
@@ -77,5 +54,5 @@ class GameWindow:
 
 
 if __name__ == "__main__":
-    with GameWindow() as game:
-        game.run()
+    game = GameWindow()
+    game.run()

@@ -10,7 +10,7 @@ class Camera:
         self.center_pos = pygame.Vector2(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 // 2)
         self.player = player
         self.screen_pos = screen_pos
-        self.camera_surface = pygame.Surface((SCREEN_WIDTH * 3, SCREEN_HEIGHT * 3))
+        self.camera_surface = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT // 2))
 
     def center_target_camera(self):
         self.offset = self.center_pos - self.player.pos

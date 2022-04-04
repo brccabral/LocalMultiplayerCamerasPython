@@ -1,15 +1,14 @@
 import random
 import sys
 from types import TracebackType
-from typing import List
+from typing import List, Tuple
 import pygame
 
 
-def debug(message: str):
-    screen = pygame.display.get_surface()
+def debug(message: str, surface: pygame.Surface):
     font = pygame.font.SysFont("Arial", 15)
     text = font.render(f"{message}", True, "white")
-    screen.blit(text, [10, 10])
+    surface.blit(text, [10, 10])
 
 
 class Player:
@@ -28,7 +27,7 @@ class Player:
         self.speed = 60
 
         # position
-        self.pos = pygame.Vector2(random.randint(20, 620), 10)
+        self.pos = pygame.Vector2(random.randint(20, 620), random.randint(20, 100))
         self.direction = pygame.Vector2(0, 0)
 
         # control
@@ -97,9 +96,6 @@ class Scene1(GameScene):
             pygame.draw.rect(
                 self.scene_surface, player.color, (player.pos[0], player.pos[1], 30, 30)
             )
-        GameWindow().window_surface.blit(self.scene_surface, (0, 0))
-        GameWindow().window_surface.blit(self.scene_surface, (0, 240))
-        debug(player.pos)
 
 
 class GameWindow:
@@ -118,6 +114,8 @@ class GameWindow:
         self.player2 = Player(
             "P2", "orange", pygame.K_j, pygame.K_l, pygame.K_i, pygame.K_k
         )
+        self.camera1 = Camera(self.player1, (0, 0))
+        self.camera2 = Camera(self.player2, (0, 240))
         self.set_scene()
         GameWindow.instance = self
         return self
@@ -149,9 +147,32 @@ class GameWindow:
                     sys.exit()
 
             self.scene.update(dt)
+            self.camera1.update(self.scene.scene_surface)
+            self.camera2.update(self.scene.scene_surface)
 
             pygame.display.update()
             dt = self.clock.tick(60) / 1000
+
+
+class Camera:
+    def __init__(self, player: Player, screen_pos: Tuple[int, int]):
+        self.offset = pygame.Vector2()
+        self.center_pos = pygame.Vector2(640 // 2, 240 // 2)
+        self.player = player
+        self.screen_pos = screen_pos
+        self.internal_surface = pygame.Surface((640 * 3, 240 * 3))
+
+    def center_target_camera(self):
+        self.offset = self.center_pos - self.player.pos
+
+    def update(self, scene_surface: pygame.Surface):
+        self.internal_surface.fill("red")
+        self.center_target_camera()
+        self.internal_surface.blit(scene_surface, self.offset)
+        debug(f"{self.player.name} {self.offset}", self.internal_surface)
+        GameWindow().window_surface.blit(
+            self.internal_surface, (self.screen_pos[0], self.screen_pos[1])
+        )
 
 
 if __name__ == "__main__":
